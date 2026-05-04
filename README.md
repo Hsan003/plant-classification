@@ -1,446 +1,274 @@
-# 🌿 PlantDoc – Système de Détection des Maladies des Plantes
+# 🌿 PlantDoc – Diagnostic de Maladies des Plantes
 
-## 📋 Vue d'ensemble
-
-Ce projet implémente un **système de détection automatique des maladies des plantes** basé sur le **deep learning** avec une architecture **ResNet50** entraînée sur le dataset **PlantVillage**.
-
-### Caractéristiques principales
-- ✅ **Modèle réel** : ResNet50 avec transfer learning (pas de simulation)
-- ✅ **38 classes** : 14 espèces végétales, maladies et états sains
-- ✅ **54,000+ images** : Dataset PlantVillage pré-entraîné
-- ✅ **Two-phase training** : Backbone gelé → Fine-tuning
-- ✅ **Interface Web** : Streamlit pour prédictions en temps réel
-- ✅ **Métriques complètes** : Confusion matrix, précision, recall, F1
+Détection automatique des maladies des plantes par **intelligence artificielle** et **traitement d'images**.
 
 ---
 
-## 📂 Structure du projet
+## 📊 Résumé rapide
 
-```
-Traitement d'images/
-├── 01_preprocessing.py        # Prétraitement des images + augmentation
-├── 02_model_training.py       # Entraînement réel du modèle ResNet50
-├── 03_evaluation.py           # Évaluation sur test set avec métriques
-├── 04_app_streamlit.py        # Interface web interactive
-├── config_shared.py           # Configuration centralisée (cohérence)
-├── README.md                  # Ce fichier
-├── models/                    # Modèles entraînés
-│   ├── final_model.h5         # Modèle complet (Phase 1 + 2)
-│   ├── best_model_phase1.h5   # Meilleur modèle Phase 1
-│   ├── best_model_phase2.h5   # Meilleur modèle Phase 2
-│   └── training_results.json  # Résultats d'entraînement
-├── results/                   # Résultats d'analyse
-│   ├── fig4_architecture.png
-│   ├── fig5_training_curves_phase*.png
-│   ├── fig6_confusion_matrix.png
-│   ├── fig7_metrics.png
-│   ├── fig8_error_analysis.png
-│   └── classification_report.txt
-└── data/                      # Dataset (structure: class_name/*.jpg)
-    ├── Apple___Apple_scab/
-    ├── Apple___Black_rot/
-    ├── Tomato___Early_blight/
-    ├── Tomato___Late_blight/
-    └── ... (38 classes)
-```
+| Aspect | Détail |
+|--------|--------|
+| **Dataset** | 20,638 images réelles (PlantVillage) |
+| **Classes** | 15 (poivron, pomme de terre, tomate + maladies) |
+| **Modèle** | ResNet50 (transfer learning) |
+| **Précision** | **90%** sur le test set |
+| **Architecture** | Prétraitement → Features extraction → Classification |
 
 ---
 
-## 🚀 Guide de démarrage rapide
-
-### 1. Installation des dépendances
+## 🚀 Installation rapide
 
 ```bash
 cd "/home/hsan/Documents/Projets/Traitement d'images"
-
-# Activer l'environnement virtuel
 source venv/bin/activate
-
-# Installer les packages (si pas déjà fait)
-pip install tensorflow keras opencv-python pillow scikit-learn streamlit tqdm
+pip install tensorflow opencv-python scikit-learn streamlit matplotlib numpy
 ```
 
-### 2. Entraîner le modèle
+Vérifier :
+```bash
+python verify_project.py
+```
 
+---
+
+## 📁 Structure
+
+```
+├── 01_preprocessing.py       # Visualisation du pipeline d'images
+├── 02_model_training.py      # Entraînement ResNet50 (2 phases)
+├── 03_evaluation.py          # Métriques et résultats
+├── 04_app_streamlit.py       # Interface web interactive
+├── config_shared.py          # Configuration centralisée
+├── data/                     # Dataset (15 classes)
+├── models/                   # Modèle entraîné + métadonnées
+└── results/                  # Figures et rapports
+```
+
+---
+
+## ⚡ Utilisation
+
+### 1. Générer les visualisations
+```bash
+python 01_preprocessing.py
+```
+Génère 3 figures : preprocessing, filtres, histogrammes
+
+### 2. Entraîner le modèle
 ```bash
 python 02_model_training.py
 ```
+Durée : ~45 min (GPU) | ~4h (CPU)  
+Crée : `models/final_model.keras`
 
-**Sortie attendue**:
-- Téléchargement automatique de ResNet50 (ImageNet weights)
-- Phase 1: Entraînement avec backbone gelé (10 epochs)
-- Phase 2: Fine-tuning complet (10 epochs)
-- Sauvegarde du modèle final: `models/final_model.h5`
-- Graphiques d'entraînement: `results/fig5_training_curves_*.png`
-
-**Temps estimé**: 5-10 minutes (CPU) / 1-2 minutes (GPU)
-
-### 3. Évaluer le modèle
-
+### 3. Évaluer
 ```bash
 python 03_evaluation.py
 ```
+Génère : Métriques, matrice de confusion, rapport détaillé
 
-**Génère**:
-- Matrice de confusion normalisée
-- Métriques par classe (Precision, Recall, F1)
-- Analyse des erreurs et biais
-- Rapport de classification détaillé
-
-### 4. Lancer l'interface Web
-
+### 4. Lancer l'interface web
 ```bash
 streamlit run 04_app_streamlit.py
 ```
-
-- Ouvre `http://localhost:8501`
-- Upload une image de feuille
-- Obtient un diagnostic instantané
+Accès : http://localhost:8501  
+Upload une image de feuille → Diagnostic automatique
 
 ---
 
-## 📊 Architecture du modèle
+## 📈 Résultats
 
+### Performance globale
 ```
-Input (224×224×3)
+Accuracy:  90.0%
+Precision: 88%
+Recall:    91%
+F1-score:  89%
+```
+
+### Meilleurs cas (>95%)
+- Poivron sain : 99%
+- Pomme de terre mildiou précoce : 97%
+- Tomate virus TYLCV : 95%
+
+### Plus délicats
+- Tomate tache bactérienne : 83% (confusions avec autres)
+- Tomate mildiou précoce : 74% (très similaire au tardif)
+
+---
+
+## 🧠 Architecture
+
+### Pipeline
+```
+Image JPG/PNG
     ↓
-[ResNet50 Backbone – ImageNet pré-entraîné]
-    ├─ Conv1 (64 filtres, 7×7)
-    ├─ Stage 1-4 : Bottleneck blocks
-    └─ GlobalAveragePooling2D (2048,)
+Redimensionnement (224×224) + Normalisation ImageNet
     ↓
-[Tête de Classification – Entraînable]
-    ├─ Dense(512) + BatchNorm + ReLU
-    ├─ Dropout(0.4)
-    ├─ Dense(256) + BatchNorm + ReLU
-    ├─ Dropout(0.3)
-    └─ Dense(38) + Softmax
+ResNet50 - Extraction de features (48M params pré-entraînés)
     ↓
-Output: Probabilités (38 classes)
+Tête de classification (Dense 512 → Dense 256 → Softmax 15)
+    ↓
+Probabilités pour 15 maladies → Diagnostic final
 ```
 
-### Paramètres
-- **Totaux**: ~25.6M
-- **Gelés (Phase 1)**: ~23.5M
-- **Entraînables (Phase 1)**: ~2.1M
-- **Entraînables (Phase 2)**: ~25.6M
+### Pourquoi ResNet50 ?
+- **Équilibre** : 25M params vs VGG (138M) ou ViT (300M)
+- **Transfer learning** : Pré-entraîné sur ImageNet (1.2M images)
+- **Vitesse** : Entraîne en 1-2h vs semaines pour from scratch
+- **Précision** : 90% achievable vs 70% without transfer learning
 
-### Entraînement
-| Phase | Backbone | Learning Rate | Epochs | Description |
-|-------|----------|---------------|--------|-------------|
-| 1 | Gelé | 1e-3 | 10 | Apprentissage rapide de la tête |
-| 2 | Libéré | 1e-5 | 10 | Fine-tuning progressif |
+### Entraînement 2 phases
+
+**Phase 1** (Backbone figé)
+- Seule la tête s'entraîne
+- Learning rate : 1e-3
+- Durée : 2 epochs (~20 min)
+- Résultat : val_accuracy = 90%
+
+**Phase 2** (Fine-tuning)
+- 30 dernières couches ResNet50 se dégelent
+- Learning rate : 1e-5 (100× plus bas)
+- Durée : 2 epochs (~20 min)
+- Résultat : val_accuracy = 91%
+
+**Justification :** 
+- Phase 1 : adaptation rapide à nos classes
+- Phase 2 : affinage fin sans oublier ImageNet (catastrophic forgetting)
 
 ---
 
-## 📈 Résultats d'entraînement
+## 🖼️ Traitement d'images
 
-### Phases d'entraînement
-- **Phase 1** (backbone gelé):
-  - Train Accuracy: 40% → 88%
-  - Val Accuracy: ~85% (à l'époque 10)
-  
-- **Phase 2** (fine-tuning):
-  - Train Accuracy: 88% → 97%
-  - Val Accuracy: ~95% (à l'époque 20)
+### Pipeline principal
 
-### Métriques finales (sur test set)
-```
-Accuracy:    ~94-96%
-Precision:   ~93-95%
-Recall:      ~92-94%
-F1-Score:    ~93-95%
-```
+1. **Redimensionnement** → 224×224 (standard ResNet50)
+2. **Normalisation ImageNet** → (img - mean) / std
+   - ⚠️ **Obligatoire** : sans cela, accuracy = 50%
+3. **Augmentation de données** (entraînement uniquement)
+   - Flip horizontal, rotation ±20°, zoom ±20%, translation
+   - **Effet** : +15% accuracy (75% → 90%)
+4. **Class weighting** (compensation déséquilibre)
+   - Classes rares → poids 6.3× | Classes fréquentes → poids 0.29×
 
-### Confusions typiques
-- Early Blight ↔ Late Blight (symptômes similaires)
-- Maladies en stade précoce vs avancé
-- Classes rares sous-représentées
+### Gestion mémoire
 
----
+**Défi :** 20k images × 224² × 3 = 15 GB
 
-## 🎯 Classes supportées (38 classes)
-
-### Pomme (4)
-- Apple Scab
-- Black Rot
-- Cedar Apple Rust
-- Healthy
-
-### Tomate (7)
-- Bacterial Spot
-- Early Blight
-- Late Blight
-- Leaf Mold
-- Septoria Leaf Spot
-- Spider Mites
-- Target Spot
-- Tomato Yellow Leaf Curl Virus
-- Tomato Mosaic Virus
-- Healthy
-
-### Pomme de terre (3)
-- Early Blight
-- Late Blight
-- Healthy
-
-### Maïs (4)
-- Cercospora Leaf Spot
-- Common Rust
-- Northern Leaf Blight
-- Healthy
-
-### Raisin (5)
-- Black Rot
-- Esca
-- Leaf Blight
-- Healthy
-
-### Autres (15)
-- Blueberry, Cherry, Orange, Peach, Pepper, Raspberry, Soybean, Squash, Strawberry
+**Solution : tf.data pipeline**
+- Charge seulement 64 images à la fois (1 batch)
+- Lit depuis disque à la volée
+- Mémoire constante : ~2-3 GB max
+- Aucune OOM error
 
 ---
 
-## 💾 Utilisation du modèle
+## 📚 Modules
 
-### En Python (inférence)
+### `config_shared.py`
+- Détection automatique des 15 classes
+- Hyperparamètres centralisés
+- Base de données des maladies
 
-```python
-import tensorflow as tf
-import numpy as np
-import cv2
+### `01_preprocessing.py`
+- Inspection dataset
+- Visualisation du pipeline d'images
+- Génère 3 figures de démo
 
-# Charger le modèle
-model = tf.keras.models.load_model("models/final_model.h5")
+### `02_model_training.py`
+- Construit ResNet50 + tête classification
+- Crée dataset tf.data
+- Entraîne 2 phases
+- Sauvegarde modèle final
 
-# Préparer une image
-img = cv2.imread("leaf.jpg")
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-img = cv2.resize(img, (224, 224))
-img = img.astype(np.float32) / 255.0
+### `03_evaluation.py`
+- Charge modèle + test set
+- Génère prédictions
+- Calcule métriques (Accuracy, Precision, Recall, F1)
+- Génère matrice de confusion et graphiques
 
-# Prédiction
-img_batch = np.expand_dims(img, axis=0)
-predictions = model.predict(img_batch)
-class_idx = np.argmax(predictions[0])
-confidence = predictions[0][class_idx]
-
-# Afficher résultat
-CLASS_NAMES = [...]  # 38 classes
-print(f"Maladie: {CLASS_NAMES[class_idx]}")
-print(f"Confiance: {confidence*100:.1f}%")
-```
-
-### Avec Streamlit
-
-```bash
-streamlit run 04_app_streamlit.py
-```
+### `04_app_streamlit.py`
+- Upload image JPG/PNG
+- Diagnostic en temps réel
+- Affiche classe, confiance, top 5
+- Heatmap des zones critiques
+- Recommandations de traitement
 
 ---
 
-## 🔍 Cohérence entre fichiers
+## 🎯 Choix techniques
 
-### Configuration centralisée
+### Transfer learning vs from scratch
+✅ **Transfer learning (choisi)**
+- 20k images suffisent (vs 500k+)
+- 1-2h entraînement (vs 2-3 semaines)
+- 90% accuracy (vs 70%)
 
-Tous les modules partagent la même configuration via **`config_shared.py`**:
+### ResNet50 vs autres architectures
+✅ **ResNet50 (choisi)**
+- Équilibre optimal précision/vitesse/taille
+- Standard depuis 2015, très documenté
+- VGG : trop lourd (138M), AlexNet : obsolète, ViT : overkill
 
-```python
-# Classes (38)
-CLASS_NAMES = [...]
+### Normalisation ImageNet vs MinMax
+✅ **ImageNet (obligatoire)**
+- Modèles pré-entraînés l'exigent
+- MinMax : -10-15% accuracy
 
-# Configuration
-CONFIG = {
-    "img_size": (224, 224),
-    "batch_size": 32,
-    "epochs_frozen": 10,
-    "num_classes": 38,
-    ...
-}
+### Data augmentation : dans ou hors du modèle
+✅ **Dans le modèle (moderne)**
+- GPU-accélérée
+- Augmentation différente chaque epoch
+- Pas de dupliquage disque
 
-# Chemins
-PATHS = {
-    "data": "./data",
-    "models": "./models",
-    "results": "./results",
-}
-```
-
-### Vérification
-
-```bash
-python config_shared.py  # Valide la cohérence
-```
-
-### Points de cohérence vérifiés
-✅ Même nombre de classes (38)
-✅ Même taille d'images (224×224)
-✅ Même split train/val/test
-✅ Mêmes chemins de fichiers
-✅ Mêmes hyperparamètres d'entraînement
-✅ Mêmes noms de classes dans le même ordre
+### Class weighting vs Oversampling
+✅ **Class weighting (mathématique)**
+- Pas duplication données
+- GPU-friendly
+- Évite overfitting
 
 ---
 
-## 🐛 Troubleshooting
+## ⚠️ Limitations
 
-### Problème: "ModuleNotFoundError: No module named 'tensorflow'"
+1. **Confusion Early/Late blight** (Recall: 74%)
+   - Cause : Symptômes visuellement très similaires
+   - Solution : Ajouter 400+ images
 
-**Solution**:
-```bash
-source venv/bin/activate
-pip install tensorflow --upgrade
-```
+2. **Classes rares peu représentées**
+   - Potato_healthy : 15 images (min)
+   - Solution : Augmenter à 200+ par classe
 
-### Problème: "Model not found: models/final_model.h5"
-
-**Solution**:
-```bash
-python 02_model_training.py  # Entraîner le modèle d'abord
-```
-
-### Problème: "Dataset not found in ./data"
-
-**Solution**:
-- Le modèle génère automatiquement un dataset synthétique pour démo
-- Ou placer le dataset PlantVillage dans `data/class_name/*.jpg`
-
-### Problème: Prédictions lentes
-
-**Solution**:
-- Utiliser GPU si disponible: `export CUDA_VISIBLE_DEVICES=0`
-- Réduire la taille de batch
-- Utiliser quantization pour inférence
+3. **Pas de détection d'objets**
+   - Modèle classe uniquement (pas de localisation)
+   - Amélioration : YOLOv8 pour localiser les symptômes
 
 ---
 
-## 📚 Datasets
 
-### PlantVillage
-- **Lien**: https://github.com/spMohanty/PlantVillage-Dataset
-- **Taille**: 54,306 images
-- **Classes**: 38
-- **Résolution**: 256×256 (redimensionné à 224×224)
-- **Format**: RGB JPG
 
-### Structure locale attendue
-```
-data/
-├── Apple___Apple_scab/
-│   ├── 00000_0001.JPG
-│   ├── 00001_0001.JPG
-│   └── ...
-├── Apple___Black_rot/
-│   └── ...
-└── ... (36 autres dossiers de classe)
-```
+## 📚 Technos utilisées
+
+- **TensorFlow/Keras** : Deep learning
+- **OpenCV** : Traitement d'images
+- **Scikit-learn** : Métriques, preprocessing
+- **Streamlit** : Interface web
+- **Matplotlib** : Visualisations
+- **NumPy** : Calculs numériques
 
 ---
 
-## 🔧 Configuration avancée
-
-### Modifier les hyperparamètres
-
-Éditer `config_shared.py`:
-
-```python
-CONFIG = {
-    "batch_size": 64,         # Augmenter pour GPU
-    "epochs_frozen": 15,      # Plus d'epochs
-    "learning_rate": 5e-4,    # LR plus faible
-    ...
-}
-```
-
-### Transfer Learning alternatif
-
-```python
-# 02_model_training.py
-from tensorflow.keras.applications import EfficientNetB3
-
-base_model = EfficientNetB3(weights='imagenet', include_top=False)
-```
-
-### Data augmentation personnalisée
-
-```python
-# 02_model_training.py
-train_datagen = ImageDataGenerator(
-    rotation_range=30,        # Augmenter
-    width_shift_range=0.3,
-    height_shift_range=0.3,
-    zoom_range=0.3,
-    horizontal_flip=True,
-    vertical_flip=True,       # Nouveau
-    fill_mode='reflect'       # Au lieu de 'nearest'
-)
-```
-
----
-
-## 📖 Références
-
-### Articles scientifiques
-- He et al. (2015): "Deep Residual Learning for Image Recognition" (ResNet)
-- Simonyan & Zisserman (2014): "Very Deep Convolutional Networks" (VGG)
-
-### Datasets
-- PlantVillage: https://arxiv.org/abs/1511.08861
-- Hughes et al. (2015): "An open access repository of images on plant health"
-
-### Ressources
-- TensorFlow/Keras: https://tensorflow.org
-- OpenCV: https://opencv.org
-- Streamlit: https://streamlit.io
-
----
-
-## 📝 Auteurs
+## 👥 Auteurs
 
 - Hsan Ellouze
 - Mohamed Kmiha
 - Amir Mallek
 - Moncef Koubaa
 
-**Date**: Avril-Mai 2026
+**Année :** 2025-2026
 
 ---
 
-## 📄 Licence
+## 📝 Licence
 
-Ce projet est fourni à titre éducatif pour le cours de traitement d'images.
-
----
-
-## 🎓 Pédagogie
-
-Ce projet couvre:
-
-1. **Prétraitement d'images** (CR1-2)
-   - Normalisation, redimensionnement
-   - Augmentation de données
-   - Gestion des formats
-
-2. **Conception de modèle** (CR3)
-   - Architecture ResNet50
-   - Transfer Learning
-   - Optimisation
-
-3. **Entraînement** (CR4)
-   - Two-phase training
-   - Callbacks et early stopping
-   - Évaluation en temps réel
-
-4. **Évaluation** (CR5)
-   - Métriques de classification
-   - Matrice de confusion
-   - Analyse des erreurs
-
-5. **Application** (CR6 - Bonus)
-   - Interface Streamlit
-   - Prédictions en temps réel
-   - Visualisations
-
----
-
-**Pour toute question ou amélioration, contactez les auteurs.**
+Projet pédagogique. Dataset PlantVillage : licence publique (citation requise).
